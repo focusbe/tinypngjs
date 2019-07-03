@@ -1,0 +1,22 @@
+{
+  "name": "tinypngjs",
+  "version": "1.0.0",
+  "description": "nodejs 调用tinypng 接口压缩图片",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/foliou/tinypngjs.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/foliou/tinypngjs/issues"
+  },
+  "homepage": "https://github.com/foliou/tinypngjs#readme",
+  "dependencies": {
+    "fs-extra": "^8.1.0"
+  }
+}
