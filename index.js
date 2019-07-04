@@ -21,7 +21,7 @@ function getOptions() {
             "Cache-Control": "no-cache",
             "Content-Type": "application/x-www-form-urlencoded",
             "User-Agent": UserAgent,
-            "X-Forwarded-For":getIp(),
+            "X-Forwarded-For": getIp(),
             Cookie: ""
         }
     };
@@ -29,10 +29,10 @@ function getOptions() {
 }
 function getIp() {
     var _ = {
-        random:function(start,end){
-            return parseInt(Math.random()*(end-start)+start);
+        random: function(start, end) {
+            return parseInt(Math.random() * (end - start) + start);
         }
-    }
+    };
     var ip = _.random(1, 254) + "." + _.random(1, 254) + "." + _.random(1, 254) + "." + _.random(1, 254);
     return ip;
 }
@@ -69,10 +69,9 @@ class TinyPng {
                         onprogress(res, compressed / total);
                     }
                 })
-                .catch((err) => {
+                .catch(err => {
                     compressed++;
-                    // console.log(err);
-                    onprogress(false, compressed / total);
+                    onprogress(false, compressed / total, err);
                 });
         }
         return true;
