@@ -71,7 +71,7 @@ class TinyPng {
                 })
                 .catch((err) => {
                     compressed++;
-                    console.log(err);
+                    // console.log(err);
                     onprogress(false, compressed / total);
                 });
         }
@@ -93,8 +93,6 @@ class TinyPng {
         }
         var res = await new Promise((resolve, reject) => {
             try {
-                // var req1 = superagent.post("http://tinypng.com/web/shrink").set("X-Forwarded-For", getIp());
-                // console.log(req1);
                 var req = https.request(getOptions(), res => {
                     res.on("data", buf => {
                         console.log(buf.toString());
