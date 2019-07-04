@@ -149,12 +149,15 @@ class Files {
                         var promisArr = [];
                         var length = paths.length;
                         var done = 0;
+                        if(length==0){
+                            result(folder);
+                        }
                         paths.forEach(function(curpath) {
                             if(!!testfun&&testfun(curpath)){
                                 done++;
                                 return true;
                             }
-                            var _src = src + "/" + curpath;
+                            var _src = path.resolve(src,curpath);
                             console.log(_src);
                             var filestat = fse.statSync(_src);
                             if (filestat) {
@@ -313,5 +316,5 @@ class Files {
         shell.showItemInFolder(folder);
     }
 }
-export default Files;
-// module.exports = Files;
+//export default Files;
+module.exports = Files;

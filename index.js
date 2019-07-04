@@ -4,79 +4,137 @@ const https = require("https");
 const crypto = require("crypto");
 const { URL } = require("url");
 const fse = require("fs-extra");
+const Files = require("./files");
 const exts = [".jpg", ".png"],
     max = 5200000; // 5MB == 5242848.754299136
 
-const options = {
-    method: "POST",
-    hostname: "tinypng.com",
-    path: "/web/shrink",
-    headers: {
-        rejectUnauthorized: false,
-        "Postman-Token": Date.now(),
-        "Cache-Control": "no-cache",
-        "Content-Type": "application/x-www-form-urlencoded",
-        "User-Agent": "Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/56.0.2924.87 Safari/537.36"
+function getOptions() {
+    var time = Date.now();
+    let UserAgent = "Mozilla/5.0(WindowsNT10.0;Win64;x64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/" + 59 + Math.round(Math.random() * 10) + ".0.3497." + Math.round(Math.random() * 100) + "Safari/537.36";
+    var options = {
+        method: "POST",
+        hostname: "tinypng.com",
+        path: "/web/shrink",
+        headers: {
+            rejectUnauthorized: false,
+            "Postman-Token": (time -= 5000),
+            "Cache-Control": "no-cache",
+            "Content-Type": "application/x-www-form-urlencoded",
+            "User-Agent": UserAgent,
+            "X-Forwarded-For":getIp(),
+            Cookie: ""
+        }
+    };
+    return options;
+}
+function getIp() {
+    var _ = {
+        random:function(start,end){
+            return parseInt(Math.random()*(end-start)+start);
+        }
     }
-};
-
+    var ip = _.random(1, 254) + "." + _.random(1, 254) + "." + _.random(1, 254) + "." + _.random(1, 254);
+    return ip;
+}
+var maxRequest = 10;
 class TinyPng {
-    constructor() {}
-    static async compress(from, out) {
+    constructor() {
+        this.requestpool = [];
+        this.imgpoop = [];
+    }
+    static async compress(from, out, onprogress) {
         if (!from) {
-            return;
+            throw new Error("请传入要压缩的文件夹");
         }
         if (!out) {
             out = from;
         }
-    }
-    static compressImg(from, out) {
-        return new Promise(function(resolve, reject) {
-            if (!from) {
-                reject("传入的文件名为空");
-                return;
-            }
-            if (!out) {
-                out = from;
-            }
-            fse.exists(from)
-                .then(exists => {
-                    if (exists) {
-                        var req = https.request(options, res => {
-                            res.on("data", buf => {
-                                let obj = JSON.parse(buf.toString());
-                                if (obj.error) {
-                                    reject(obj.error);
-                                } else {
-                                    this.saveImg(out, obj)
-                                        .then(res => {
-                                            resolve(res);
-                                        })
-                                        .catch(err => {
-                                            reject(err);
-                                        });
-                                }
-                            });
-                        });
-                        fse.readFile(from)
-                            .then(data => {
-                                req.write(data, "binary");
-                                req.on("error", e => {
-                                    reject(e);
-                                });
-                                req.end();
-                            })
-                            .catch(e => {
-                                reject(e);
-                            });
-                    } else {
-                        reject("文件不存在");
+        var imagelist = await this.getAllImg(from);
+        if (!imagelist || imagelist.length == 0) {
+            throw new Error("没有获取到图片文件");
+        }
+        var total = imagelist.length;
+        var compressed = 0;
+        // console.log(total);
+        for (var i in imagelist) {
+            let curpath = imagelist[i].path;
+            // console.log(curpath);
+            let relative = path.relative(from, curpath);
+            let outputPath = path.resolve(out, relative);
+
+            TinyPng.compressImg(curpath, outputPath)
+                .then(res => {
+                    compressed++;
+                    if (!!onprogress) {
+                        onprogress(res, compressed / total);
                     }
                 })
-                .catch(err => {
-                    reject(err);
+                .catch((err) => {
+                    compressed++;
+                    console.log(err);
+                    onprogress(false, compressed / total);
                 });
+        }
+        return true;
+    }
+
+    static getFromPool() {}
+
+    static async compressImg(from, out) {
+        if (!from) {
+            throw new Error("请传入正确的from");
+        }
+        if (!out) {
+            out = from;
+        }
+        var exists = await fse.exists(from);
+        if (!exists) {
+            throw new Error("传入的文件不存在");
+        }
+        var res = await new Promise((resolve, reject) => {
+            try {
+                // var req1 = superagent.post("http://tinypng.com/web/shrink").set("X-Forwarded-For", getIp());
+                // console.log(req1);
+                var req = https.request(getOptions(), res => {
+                    res.on("data", buf => {
+                        console.log(buf.toString());
+                        let obj;
+                        try {
+                            obj = JSON.parse(buf.toString());
+                        } catch (error) {
+                            reject(new Error("解析返回值失败"));
+                        }
+                        if (obj.error) {
+                            reject(obj.error);
+                        } else {
+                            this.saveImg(out, obj)
+                                .then(saveRes => {
+                                    resolve(saveRes);
+                                })
+                                .catch(error => {
+                                    console.log("error");
+                                    reject(error);
+                                });
+                        }
+                    });
+                });
+                fse.readFile(from)
+                    .then(data => {
+                        req.write(data, "binary");
+                        req.on("error", e => {
+                            console.log(e);
+                            reject(e);
+                        });
+                        req.end();
+                    })
+                    .catch(error => {
+                        reject(error);
+                    });
+            } catch (error) {
+                reject(error);
+            }
         });
+        return res;
     }
     static saveImg(imgpath, obj) {
         return new Promise((resolve, reject) => {
@@ -87,110 +145,32 @@ class TinyPng {
                 res.on("data", function(data) {
                     body += data;
                 });
-
                 res.on("end", function() {
-                    fs.writeFile(imgpath, body, "binary", err => {
-                        if (err) {
-                            reject(err);
-                            return;
-                        }
-                        resolve(obj);
+                    // console.log(111);
+                    Files.createdirAsync(path.dirname(imgpath)).then(res => {
+                        fs.writeFile(imgpath, body, "binary", err => {
+                            if (err) {
+                                reject(err);
+                                return;
+                            }
+                            resolve(obj);
+                        });
                     });
                 });
             });
             req.on("error", e => {
+                reject(e);
                 console.error(e);
             });
             req.end();
         });
     }
-    static getAllImg() {}
-    static fileFilter(file, cb) {
-        fs.stat(file, (err, stats) => {
-            if (err) return console.error(err);
-            if (
-                // 必须是文件，小于5MB，后缀 jpg||png
-                stats.size <= max &&
-                stats.isFile() &&
-                exts.includes(path.extname(file))
-            ) {
-                //fileUpload(file); // console.log('可以压缩：' + file);
-                cb(file);
-            }
-            if (stats.isDirectory()) {
-                TinyPng.fileList(file + "/");
-            }
+    static async getAllImg(file) {
+        var imgs = await Files.getTree(file, false, null, function(file) {
+            return !!path.extname(file) && !exts.includes(path.extname(file));
+            // return !!path.extname(file) && exts.includes(path.extname(file)));
         });
+        return imgs;
     }
 }
-
-// fileList(root);
-
-// 获取文件列表
-// function fileList(folder) {
-//     fs.readdir(folder, (err, files) => {
-//         if (err) console.error(err);
-//         files.forEach(file => {
-//             fileFilter(folder + file);
-//         });
-//     });
-// }
-
-// 过滤文件格式，返回所有jpg,png图片
-function fileFilter(file) {
-    fs.stat(file, (err, stats) => {
-        if (err) return console.error(err);
-        if (
-            // 必须是文件，小于5MB，后缀 jpg||png
-            stats.size <= max &&
-            stats.isFile() &&
-            exts.includes(path.extname(file))
-        ) {
-            fileUpload(file); // console.log('可以压缩：' + file);
-        }
-        if (stats.isDirectory()) fileList(file + "/");
-    });
-}
-// 异步API,压缩图片
-// {"error":"Bad request","message":"Request is invalid"}
-// {"input": { "size": 887, "type": "image/png" },"output": { "size": 785, "type": "image/png", "width": 81, "height": 81, "ratio": 0.885, "url": "https://tinypng.com/web/output/7aztz90nq5p9545zch8gjzqg5ubdatd6" }}
-function fileUpload(img) {
-    var req = https.request(options, function(res) {
-        res.on("data", buf => {
-            let obj = JSON.parse(buf.toString());
-            if (obj.error) {
-                console.log(`[${img}]：压缩失败！报错：${obj.message}`);
-            } else {
-                fileUpdate(img, obj);
-            }
-        });
-    });
-
-    req.write(fs.readFileSync(img), "binary");
-    req.on("error", e => {
-        console.error(e);
-    });
-    req.end();
-}
-// 该方法被循环调用,请求图片数据
-function fileUpdate(imgpath, obj) {
-    let options = new URL(obj.output.url);
-    let req = https.request(options, res => {
-        let body = "";
-        res.setEncoding("binary");
-        res.on("data", function(data) {
-            body += data;
-        });
-
-        res.on("end", function() {
-            fs.writeFile(imgpath, body, "binary", err => {
-                if (err) return console.error(err);
-                console.log(`[${imgpath}] \n 压缩成功，原始大小-${obj.input.size}，压缩大小-${obj.output.size}，优化比例-${obj.output.ratio}`);
-            });
-        });
-    });
-    req.on("error", e => {
-        console.error(e);
-    });
-    req.end();
-}
+module.exports = TinyPng;

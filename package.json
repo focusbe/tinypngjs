@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/foliou/tinypngjs#readme",
   "dependencies": {
-    "fs-extra": "^8.1.0"
+    "fs-extra": "^8.1.0",
+    "superagent": "^5.1.0"
   }
 }
