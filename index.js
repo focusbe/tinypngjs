@@ -42,6 +42,32 @@ class TinyPng {
         this.requestpool = [];
         this.imgpoop = [];
     }
+    static compressList(imagelist, onprogress) {
+        if (!imagelist || imagelist.length == 0) {
+            throw new Error("没有获取到图片文件");
+        }
+        var total = imagelist.length;
+        var compressed = 0;
+        // console.log(total);
+        for (var i in imagelist) {
+            let curpath = imagelist[i].path;
+            // console.log(curpath);
+            // let relative = path.relative(from, curpath);
+            // let outputPath = path.resolve(out, relative);
+            TinyPng.compressImg(curpath, curpath)
+                .then(res => {
+                    compressed++;
+                    if (!!onprogress) {
+                        onprogress(res, compressed / total);
+                    }
+                })
+                .catch(err => {
+                    compressed++;
+                    onprogress(false, compressed / total, err);
+                });
+        }
+        return true;
+    }
     static async compress(from, out, onprogress) {
         if (!from) {
             throw new Error("请传入要压缩的文件夹");

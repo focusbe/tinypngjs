@@ -23,7 +23,6 @@ function asyncFun() {
         }, 1000);
     });
 }
-var superagent = require("superagent");
 async function main() {
     try {
         TinyPngjs.compress('D:\\www\\ztgamegit\\zt2m\\act\\bazhu\\images','C:\\Users\\liupeng\\Desktop\\qietu\\bazhu',function(res,percent){
