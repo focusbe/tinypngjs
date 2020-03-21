@@ -4,7 +4,7 @@ description: 图片压缩工具
 
 # tinypngjs
 
-## 一、安装
+## 安装
 
 ```bash
 npm install tinypngjs
@@ -13,6 +13,8 @@ npm install tinypngjs
 ```bash
 var TinyPng = require("tinypngjs");
 ```
+
+## API
 
 #### TinyPng.compress\(fromFolder,\[outFolder,onProgress\]\);
 
