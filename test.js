@@ -25,7 +25,7 @@ function asyncFun() {
 }
 async function main() {
     try {
-        TinyPngjs.compress('D:\\www\\ztgamegit\\zt2m\\act\\bazhu\\images','C:\\Users\\liupeng\\Desktop\\qietu\\bazhu',function(res,percent){
+        TinyPngjs.compress('./qietu','./qietu',function(res,percent){
             console.log(res);
             console.log(percent);
         });

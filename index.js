@@ -7,7 +7,9 @@ const fse = require("fs-extra");
 const Files = require("./files");
 const exts = [".jpg", ".png"],
     max = 5200000; // 5MB == 5242848.754299136
-
+const imagemin = require('imagemin');
+const imageminJpegtran = require('imagemin-jpegtran');
+const imageminPngquant = require('imagemin-pngquant');
 function getOptions() {
     var time = Date.now();
     let UserAgent = "Mozilla/5.0(WindowsNT10.0;Win64;x64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/" + 59 + Math.round(Math.random() * 10) + ".0.3497." + Math.round(Math.random() * 100) + "Safari/537.36";
@@ -29,7 +31,7 @@ function getOptions() {
 }
 function getIp() {
     var _ = {
-        random: function(start, end) {
+        random: function (start, end) {
             return parseInt(Math.random() * (end - start) + start);
         }
     };
@@ -103,7 +105,7 @@ class TinyPng {
         return true;
     }
 
-    static getFromPool() {}
+    static getFromPool() { }
 
     static async compressImg(from, out) {
         if (!from) {
@@ -115,6 +117,24 @@ class TinyPng {
         var exists = await fse.exists(from);
         if (!exists) {
             throw new Error("传入的文件不存在");
+        }
+        var plugins = [];
+        if (from.indexOf('.jpg') > -1) {
+            plugins.push(imageminJpegtran());
+        }
+        else if (from.indexOf('.png') > -1) {
+            plugins.push(imageminPngquant({
+                quality: [0.6, 0.8]
+            }));
+        }
+        try {
+            var files = await imagemin([from], {
+                destination: path.dirname(out),
+                plugins: plugins
+            });
+        } catch (error) {
+            console.log(error);
+            return false;
         }
         var res = await new Promise((resolve, reject) => {
             try {
@@ -165,10 +185,10 @@ class TinyPng {
             let req = https.request(options, res => {
                 let body = "";
                 res.setEncoding("binary");
-                res.on("data", function(data) {
+                res.on("data", function (data) {
                     body += data;
                 });
-                res.on("end", function() {
+                res.on("end", function () {
                     // console.log(111);
                     Files.createdirAsync(path.dirname(imgpath)).then(res => {
                         fs.writeFile(imgpath, body, "binary", err => {
@@ -189,7 +209,7 @@ class TinyPng {
         });
     }
     static async getAllImg(file) {
-        var imgs = await Files.getTree(file, false, null, function(file) {
+        var imgs = await Files.getTree(file, false, null, function (file) {
             return !!path.extname(file) && !exts.includes(path.extname(file));
             // return !!path.extname(file) && exts.includes(path.extname(file)));
         });
