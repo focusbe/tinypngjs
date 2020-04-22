@@ -140,7 +140,7 @@ class TinyPng {
             try {
                 var req = https.request(getOptions(), res => {
                     res.on("data", buf => {
-                        console.log(buf.toString());
+                        // console.log(buf.toString());
                         let obj;
                         try {
                             obj = JSON.parse(buf.toString());
