@@ -158,7 +158,6 @@ class Files {
                                 return true;
                             }
                             var _src = path.resolve(src,curpath);
-                            console.log(_src);
                             var filestat = fse.statSync(_src);
                             if (filestat) {
                                 if (filestat.isDirectory()) {
@@ -212,9 +211,6 @@ class Files {
             callback = hasFile;
             hasFile = [];
         }
-        // var fileslist = fse.readdirSync(src);
-        // return fileslist;
-        
         function run(callback){
             fse.readdir(src, function(err, paths) {
                 if (!!err || !paths) {

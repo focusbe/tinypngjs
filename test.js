@@ -26,8 +26,8 @@ function asyncFun() {
 async function main() {
     try {
         TinyPngjs.compress('./qietu','./qietu',function(res,percent){
-            console.log(res);
-            console.log(percent);
+            // console.log(res);
+            // console.log(percent);
         });
         //console.log(allimg);
     } catch (error) {

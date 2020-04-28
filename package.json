@@ -18,8 +18,9 @@
   "homepage": "https://github.com/focusbe/tinypngjs#readme",
   "dependencies": {
     "fs-extra": "^8.1.0",
+    "iconv-lite": "^0.5.1",
     "imagemin": "^7.0.1",
-    "imagemin-jpegtran": "^6.0.0",
+    "imagemin-mozjpeg": "^8.0.0",
     "imagemin-pngquant": "^8.0.0"
   }
 }
