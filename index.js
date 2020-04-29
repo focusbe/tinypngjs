@@ -79,7 +79,6 @@ class TinyPng {
 		if (extname == ".jpg" || extname == ".jpeg") {
 			plugins.push(_plugins["jpg"]);
 		} else if (extname == ".png") {
-			console.log("ispng");
 			plugins.push(_plugins["png"]);
 		}
 		return plugins;
@@ -139,7 +138,7 @@ class TinyPng {
 		}
 
 		var resObj = {
-			input: { site: stat.size, path: from },
+			input: { size: stat.size, path: from },
 		};
 		if (!disableTiny && tinyExts.indexOf(path.extname(from)) > -1) {
 			var obj = await this.uploadImage(imageData);
