@@ -1,6 +1,6 @@
 {
   "name": "tinypngjs",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "nodejs 调用tinypng 接口压缩图片",
   "main": "index.js",
   "scripts": {
