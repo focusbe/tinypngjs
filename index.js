@@ -98,6 +98,7 @@ class TinyPng {
 					}
 				})
 				.catch((err) => {
+					console.log(err);
 					compressed++;
 					onprogress(false, compressed / total, err);
 				});
@@ -119,27 +120,30 @@ class TinyPng {
 			throw new Error("传入的文件不存在");
 		}
 		var plugins = [
-			imageminMozjpeg(),
+			imageminMozjpeg({
+				quality: 60,
+			}),
 			imageminPngquant({
 				quality: [0.6, 0.8],
 			}),
 		];
-
+		var imagedata;
+		var stat;
 		try {
+			stat = await fse.stat(from);
 			from = path.relative(__dirname, from).replace(/\\/g, "/");
-			var image = await imagemin(["qietu/*.{png,jpg}"], {
-				destination: "output",
+			var image = await imagemin([from], {
 				plugins: plugins,
 			});
-
-			// console.log(image);
+			imagedata = image[0]["data"];
+			// console.log(image[0]["data"]);
 		} catch (error) {
-			console.log(from);
-			var msg = iconv.decode(error.stderr, "cp936");
-			console.log(error);
+			// console.log(from);
+			// var msg = iconv.decode(error.stderr, "cp936");
+			console.error(error);
 			return false;
 		}
-		return;
+
 		var res = await new Promise((resolve, reject) => {
 			try {
 				var req = https.request(getOptions(), (res) => {
@@ -156,27 +160,43 @@ class TinyPng {
 						} else {
 							this.saveImg(out, obj)
 								.then((saveRes) => {
-									resolve(saveRes);
+									// console.log(saveRes);
+									// console.log(stat.size);
+									if (saveRes && saveRes.output) {
+										let reduce = stat.size - saveRes.output.size;
+										saveRes.input.size = stat.size;
+										saveRes.ratio = saveRes.output.size / stat.size;
+										resolve(saveRes);
+									} else {
+										reject("压缩失败");
+									}
 								})
 								.catch((error) => {
-									console.log("error");
+									console.log(error);
 									reject(error);
 								});
 						}
 					});
 				});
-				fse.readFile(from)
-					.then((data) => {
-						req.write(data, "binary");
-						req.on("error", (e) => {
-							console.log(e);
-							reject(e);
-						});
-						req.end();
-					})
-					.catch((error) => {
-						reject(error);
+				function writedata(data) {
+					req.write(data, "binary");
+					req.on("error", (e) => {
+						console.log(e);
+						reject(e);
 					});
+					req.end();
+				}
+				if (!!imagedata) {
+					writedata(imagedata);
+				} else {
+					fse.readFile(from)
+						.then((data) => {
+							imagedata(data);
+						})
+						.catch((error) => {
+							reject(error);
+						});
+				}
 			} catch (error) {
 				reject(error);
 			}

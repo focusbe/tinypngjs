@@ -7,37 +7,37 @@ var TinyPngjs = require("./index");
 // });
 
 function createErr(msg) {
-    return new Promise(async (resolve, reject) => {
-        try {
-            var res = await asyncFun();
-            resolve(res);
-        } catch (error) {
-            reject(error);
-        }
-    });
+	return new Promise(async (resolve, reject) => {
+		try {
+			var res = await asyncFun();
+			resolve(res);
+		} catch (error) {
+			reject(error);
+		}
+	});
 }
 function asyncFun() {
-    return new Promise((reject, resolve) => {
-        setTimeout(function() {
-            resolve(1);
-        }, 1000);
-    });
+	return new Promise((reject, resolve) => {
+		setTimeout(function () {
+			resolve(1);
+		}, 1000);
+	});
 }
 async function main() {
-    try {
-        TinyPngjs.compress('./qietu','./qietu',function(res,percent){
-            // console.log(res);
-            // console.log(percent);
-        });
-        //console.log(allimg);
-    } catch (error) {
-        console.log(error);
-    }
-    // superagent.post('https://tinypng.com/web/shrink').then((res)=>{
-    //     console.log(res);
-    // }).catch((err)=>{
-    //     console.log('_________err______');
-    //     console.log(err);
-    // });;
+	try {
+		TinyPngjs.compress("./input", "./output", function (res, percent) {
+			console.log(res);
+			console.log(percent);
+		});
+		//console.log(allimg);
+	} catch (error) {
+		console.log(error);
+	}
+	// superagent.post('https://tinypng.com/web/shrink').then((res)=>{
+	//     console.log(res);
+	// }).catch((err)=>{
+	//     console.log('_________err______');
+	//     console.log(err);
+	// });;
 }
 main();
