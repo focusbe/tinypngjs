@@ -136,10 +136,8 @@ class TinyPng {
 				plugins: plugins,
 			});
 			imagedata = image[0]["data"];
-			// console.log(image[0]["data"]);
+
 		} catch (error) {
-			// console.log(from);
-			// var msg = iconv.decode(error.stderr, "cp936");
 			console.error(error);
 			return false;
 		}
@@ -160,8 +158,6 @@ class TinyPng {
 						} else {
 							this.saveImg(out, obj)
 								.then((saveRes) => {
-									// console.log(saveRes);
-									// console.log(stat.size);
 									if (saveRes && saveRes.output) {
 										let reduce = stat.size - saveRes.output.size;
 										saveRes.input.size = stat.size;
