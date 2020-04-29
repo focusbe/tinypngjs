@@ -4,58 +4,23 @@ const https = require("https");
 const { URL } = require("url");
 const fse = require("fs-extra");
 const Files = require("./files");
-const exts = [".jpg", ".png"],
-	max = 5200000; // 5MB == 5242848.754299136
+const exts = [".jpg", ".png", ".gif", ".webp", ".jpeg", ".svg"]; //图片的格式，不一定压缩但是可以完成复制；
+const tinyExts = [".jpg", ".png"];
+const max = 5200000; // 5MB == 5242848.754299136
 const imagemin = require("imagemin");
-const iconv = require("iconv-lite");
 const imageminMozjpeg = require("imagemin-mozjpeg");
 const imageminPngquant = require("imagemin-pngquant");
-function getOptions() {
-	var time = Date.now();
-	let UserAgent = "Mozilla/5.0(WindowsNT10.0;Win64;x64)AppleWebKit/537.36(KHTML,likeGecko)Chrome/" + 59 + Math.round(Math.random() * 10) + ".0.3497." + Math.round(Math.random() * 100) + "Safari/537.36";
-	var options = {
-		method: "POST",
-		hostname: "tinypng.com",
-		path: "/web/shrink",
-		headers: {
-			rejectUnauthorized: false,
-			"Postman-Token": (time -= 5000),
-			"Cache-Control": "no-cache",
-			"Content-Type": "application/x-www-form-urlencoded",
-			"User-Agent": UserAgent,
-			"X-Forwarded-For": getIp(),
-			Cookie: "",
-		},
-	};
-	return options;
-}
-function getIp() {
-	var _ = {
-		random: function (start, end) {
-			return parseInt(Math.random() * (end - start) + start);
-		},
-	};
-	var ip = _.random(1, 254) + "." + _.random(1, 254) + "." + _.random(1, 254) + "." + _.random(1, 254);
-	return ip;
-}
-var maxRequest = 10;
+const Utli = require("./utli");
 class TinyPng {
-	constructor() {
-		this.requestpool = [];
-		this.imgpoop = [];
-	}
+	constructor() {}
 	static compressList(imagelist, onprogress) {
 		if (!imagelist || imagelist.length == 0) {
 			throw new Error("没有获取到图片文件");
 		}
 		var total = imagelist.length;
 		var compressed = 0;
-		// console.log(total);
 		for (var i in imagelist) {
 			let curpath = imagelist[i].path;
-			// console.log(curpath);
-			// let relative = path.relative(from, curpath);
-			// let outputPath = path.resolve(out, relative);
 			TinyPng.compressImg(curpath, curpath)
 				.then((res) => {
 					compressed++;
@@ -83,13 +48,10 @@ class TinyPng {
 		}
 		var total = imagelist.length;
 		var compressed = 0;
-		// console.log(total);
 		for (var i in imagelist) {
 			let curpath = imagelist[i].path;
-			// console.log(curpath);
 			let relative = path.relative(from, curpath);
 			let outputPath = path.resolve(out, relative);
-
 			TinyPng.compressImg(curpath, outputPath)
 				.then((res) => {
 					compressed++;
@@ -98,15 +60,49 @@ class TinyPng {
 					}
 				})
 				.catch((err) => {
-					console.log(err);
 					compressed++;
 					onprogress(false, compressed / total, err);
 				});
 		}
 		return true;
 	}
-
-	static getFromPool() {}
+	static getPlugins(extname) {
+		var plugins = [];
+		if (extname == ".jpg" || ".jpeg") {
+			plugins.push(imageminMozjpeg());
+		} else if (extname == ".png") {
+			plugins.push(imageminPngquant({}));
+		}
+		return plugins;
+	}
+	static uploadImage(imageData) {
+		//上传到tinypng进行压缩
+		if (!imageData || imageData.length > max) {
+			return false;
+		}
+		return new Promise((resolve, reject) => {
+			var req = https.request(Utli.getOptions(), (res) => {
+				res.on("data", (buf) => {
+					let obj;
+					try {
+						obj = JSON.parse(buf.toString());
+					} catch (error) {
+						reject(new Error("解析返回值失败"));
+					}
+					if (obj.error) {
+						reject(new Error(obj.error));
+					} else {
+						resolve(obj);
+					}
+				});
+			});
+			req.write(imageData, "binary");
+			req.on("error", (err) => {
+				reject(err);
+			});
+			req.end();
+		});
+	}
 
 	static async compressImg(from, out) {
 		if (!from) {
@@ -119,89 +115,72 @@ class TinyPng {
 		if (!exists) {
 			throw new Error("传入的文件不存在");
 		}
-		var plugins = [
-			imageminMozjpeg({
-				quality: 60,
-			}),
-			imageminPngquant({
-				quality: [0.6, 0.8],
-			}),
-		];
-		var imagedata;
+		var imageData;
 		var stat;
+		var res;
 		try {
 			stat = await fse.stat(from);
-			from = path.relative(__dirname, from).replace(/\\/g, "/");
+			from = from.replace(/\\/g, "/");
+			// from = path.relative(__dirname, from).replace(/\\/g, "/");
 			var image = await imagemin([from], {
-				plugins: plugins,
+				plugins: this.getPlugins(path.extname(from)),
 			});
-			imagedata = image[0]["data"];
-
+			imageData = image[0]["data"];
 		} catch (error) {
-			console.error(error);
-			return false;
+			throw error;
 		}
-
-		var res = await new Promise((resolve, reject) => {
+		var resObj = {
+			input: { site: stat.size, path: from },
+		};
+		var res;
+		if (tinyExts.indexOf(path.extname(from)) > -1) {
 			try {
-				var req = https.request(getOptions(), (res) => {
-					res.on("data", (buf) => {
-						// console.log(buf.toString());
-						let obj;
-						try {
-							obj = JSON.parse(buf.toString());
-						} catch (error) {
-							reject(new Error("解析返回值失败"));
-						}
-						if (obj.error) {
-							reject(obj.error);
-						} else {
-							this.saveImg(out, obj)
-								.then((saveRes) => {
-									if (saveRes && saveRes.output) {
-										let reduce = stat.size - saveRes.output.size;
-										saveRes.input.size = stat.size;
-										saveRes.ratio = saveRes.output.size / stat.size;
-										resolve(saveRes);
-									} else {
-										reject("压缩失败");
-									}
-								})
-								.catch((error) => {
-									console.log(error);
-									reject(error);
-								});
-						}
-					});
-				});
-				function writedata(data) {
-					req.write(data, "binary");
-					req.on("error", (e) => {
-						console.log(e);
-						reject(e);
-					});
-					req.end();
-				}
-				if (!!imagedata) {
-					writedata(imagedata);
+				var obj = await this.uploadImage(imageData);
+				if (obj && obj.output) {
+					var content = this.downloadFile(obj.output.url);
+					res = this.saveImg(out, content);
+					if (res) {
+						resObj.output = {
+							size: obj.output.size,
+							path: out,
+						};
+					}
 				} else {
-					fse.readFile(from)
-						.then((data) => {
-							imagedata(data);
-						})
-						.catch((error) => {
-							reject(error);
-						});
+					res = this.saveImg(out, imageData);
+					if (res) {
+						resObj.output = {
+							size: imageData.length,
+							path: out,
+						};
+					}
 				}
 			} catch (error) {
-				reject(error);
+				//
+				throw error;
 			}
-		});
-		return res;
+		} else {
+			try {
+				res = await this.saveImg(out, imageData);
+				if (res) {
+					resObj.output = {
+						size: imageData.length,
+						path: out,
+					};
+				}
+			} catch (error) {
+				throw error;
+			}
+		}
+		if (res) {
+			return resObj;
+		} else {
+			throw new Error("保存文件失败");
+		}
 	}
-	static saveImg(imgpath, obj) {
+	static downloadFile(url) {
+		//下载文件
 		return new Promise((resolve, reject) => {
-			let options = new URL(obj.output.url);
+			let options = new URL(url);
 			let req = https.request(options, (res) => {
 				let body = "";
 				res.setEncoding("binary");
@@ -209,29 +188,32 @@ class TinyPng {
 					body += data;
 				});
 				res.on("end", function () {
-					// console.log(111);
-					Files.createdirAsync(path.dirname(imgpath)).then((res) => {
-						fs.writeFile(imgpath, body, "binary", (err) => {
-							if (err) {
-								reject(err);
-								return;
-							}
-							resolve(obj);
-						});
-					});
+					resolve(body);
 				});
 			});
 			req.on("error", (e) => {
 				reject(e);
-				console.error(e);
 			});
 			req.end();
+		});
+	}
+	static saveImg(imgpath, content) {
+		//保存在线压缩好的图片
+		return new Promise((resolve, reject) => {
+			Files.createdirAsync(path.dirname(imgpath)).then((res) => {
+				fs.writeFile(imgpath, content, "binary", (err) => {
+					if (err) {
+						reject(err);
+						return;
+					}
+					resolve(true);
+				});
+			});
 		});
 	}
 	static async getAllImg(file) {
 		var imgs = await Files.getTree(file, false, null, function (file) {
 			return !!path.extname(file) && !exts.includes(path.extname(file));
-			// return !!path.extname(file) && exts.includes(path.extname(file)));
 		});
 		return imgs;
 	}
