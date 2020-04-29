@@ -11,6 +11,14 @@ const imagemin = require("imagemin");
 const imageminMozjpeg = require("imagemin-mozjpeg");
 const imageminPngquant = require("imagemin-pngquant");
 const Utli = require("./utli");
+const _plugins = {
+	jpg: imageminMozjpeg({
+		quality: 80,
+	}),
+	png: imageminPngquant({
+		quality: [0.6, 0.8],
+	}),
+};
 class TinyPng {
 	constructor() {}
 	static compressList(imagelist, onprogress) {
@@ -68,10 +76,11 @@ class TinyPng {
 	}
 	static getPlugins(extname) {
 		var plugins = [];
-		if (extname == ".jpg" || ".jpeg") {
-			plugins.push(imageminMozjpeg());
+		if (extname == ".jpg" || extname == ".jpeg") {
+			plugins.push(_plugins["jpg"]);
 		} else if (extname == ".png") {
-			plugins.push(imageminPngquant({}));
+			console.log("ispng");
+			plugins.push(_plugins["png"]);
 		}
 		return plugins;
 	}
@@ -104,7 +113,7 @@ class TinyPng {
 		});
 	}
 
-	static async compressImg(from, out) {
+	static async compressImg(from, out, disableTiny) {
 		if (!from) {
 			throw new Error("请传入正确的from");
 		}
@@ -118,63 +127,39 @@ class TinyPng {
 		var imageData;
 		var stat;
 		var res;
-		try {
-			stat = await fse.stat(from);
-			from = from.replace(/\\/g, "/");
-			// from = path.relative(__dirname, from).replace(/\\/g, "/");
-			var image = await imagemin([from], {
-				plugins: this.getPlugins(path.extname(from)),
-			});
+		stat = await fse.stat(from);
+		from = from.replace(/\\/g, "/");
+		var image = await imagemin([from], {
+			plugins: this.getPlugins(path.extname(from)),
+		});
+		if (image[0] && image[0]["data"]) {
 			imageData = image[0]["data"];
-		} catch (error) {
-			throw error;
+		} else {
+			return false;
 		}
+
 		var resObj = {
 			input: { site: stat.size, path: from },
 		};
-		var res;
-		if (tinyExts.indexOf(path.extname(from)) > -1) {
-			try {
-				var obj = await this.uploadImage(imageData);
-				if (obj && obj.output) {
-					var content = this.downloadFile(obj.output.url);
-					res = this.saveImg(out, content);
-					if (res) {
-						resObj.output = {
-							size: obj.output.size,
-							path: out,
-						};
-					}
-				} else {
-					res = this.saveImg(out, imageData);
-					if (res) {
-						resObj.output = {
-							size: imageData.length,
-							path: out,
-						};
-					}
+		if (!disableTiny && tinyExts.indexOf(path.extname(from)) > -1) {
+			var obj = await this.uploadImage(imageData);
+			if (obj && obj.output) {
+				var content = await this.downloadFile(obj.output.url);
+				// console.log(content);
+				if (content) {
+					imageData = content;
 				}
-			} catch (error) {
-				//
-				throw error;
-			}
-		} else {
-			try {
-				res = await this.saveImg(out, imageData);
-				if (res) {
-					resObj.output = {
-						size: imageData.length,
-						path: out,
-					};
-				}
-			} catch (error) {
-				throw error;
 			}
 		}
+		var res = await this.saveImg(out, imageData);
 		if (res) {
+			resObj.output = {
+				size: imageData.length,
+				path: out,
+			};
 			return resObj;
 		} else {
-			throw new Error("保存文件失败");
+			return false;
 		}
 	}
 	static downloadFile(url) {
