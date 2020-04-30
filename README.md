@@ -63,12 +63,6 @@ var res = await TinyPng.compressImg("./a/1.jpg");
 nodejs版：[https://github.com/focusbe/tinypngjs](https://github.com/focusbe/tinypngjs)  
 客户端版：[https://github.com/focusbe/tinyImage](https://github.com/focusbe/tinyImage)
 
-## 客户端版
-
- 为了满足更多的使用场景，通过上面的库做了一个带有界面的版本，只需要把文件夹拖进去就可以完成压缩并覆盖原来的图片；
-
-[https://github.com/focusbe/tinyImage/releases](https://github.com/focusbe/tinyImage/releases)  
-欢迎下载使用
 
 
 
