@@ -139,16 +139,19 @@ class TinyPng {
 
 		var resObj = {
 			input: { size: stat.size, path: from },
+			type: "imagemin",
 		};
 		if (!disableTiny && tinyExts.indexOf(path.extname(from)) > -1) {
-			var obj = await this.uploadImage(imageData);
-			if (obj && obj.output) {
-				var content = await this.downloadFile(obj.output.url);
-				// console.log(content);
-				if (content) {
-					imageData = content;
+			try {
+				var obj = await this.uploadImage(imageData);
+				if (obj && obj.output) {
+					var content = await this.downloadFile(obj.output.url);
+					if (content) {
+						resObj.type = "tinypng";
+						imageData = content;
+					}
 				}
-			}
+			} catch (error) {}
 		}
 		var res = await this.saveImg(out, imageData);
 		if (res) {
