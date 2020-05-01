@@ -25,9 +25,10 @@ function asyncFun() {
 }
 async function main() {
 	try {
-		TinyPngjs.compress("./input", "./output", function (res, percent) {
+		TinyPngjs.compress("./input", "./output", function (res, percent,err) {
 			console.log(res);
 			console.log(percent);
+			console.log(err);
 		});
 		//console.log(allimg);
 	} catch (error) {

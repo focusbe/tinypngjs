@@ -152,10 +152,7 @@ class Files {
                             result(folder);
                         }
                         paths.forEach(function(curpath) {
-                            if(!!testfun&&testfun(curpath)){
-                                done++;
-                                return true;
-                            }
+                            
                             var _src = path.resolve(src,curpath);
                             var filestat = fse.statSync(_src);
                             if (filestat) {
@@ -184,6 +181,10 @@ class Files {
                                             }
                                         });
                                 } else {
+                                    if(!!testfun&&testfun(curpath)){
+                                        done++;
+                                        return true;
+                                    }
                                     done++;
                                     folder.push({
                                         path: _src,
