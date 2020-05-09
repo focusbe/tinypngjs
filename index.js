@@ -8,16 +8,16 @@ const exts = [".jpg", ".png", ".gif", ".webp", ".jpeg", ".svg"]; //图片的格�
 const tinyExts = [".jpg", ".png"];
 const max = 5200000; // 5MB == 5242848.754299136
 const imagemin = require("imagemin");
-const imageminMozjpeg = require("imagemin-mozjpeg");
-const imageminPngquant = require("imagemin-pngquant");
+// const imageminMozjpeg = require("imagemin-mozjpeg");
+// const imageminPngquant = require("imagemin-pngquant");
 const Utli = require("./utli");
 const _plugins = {
-	jpg: imageminMozjpeg({
-		quality: 80,
-	}),
-	png: imageminPngquant({
-		quality: [0.6, 0.8],
-	}),
+	// jpg: imageminMozjpeg({
+	// 	quality: 80,
+	// }),
+	// png: imageminPngquant({
+	// 	quality: [0.6, 0.8],
+	// }),
 };
 class TinyPng {
 	constructor() {}
@@ -76,11 +76,11 @@ class TinyPng {
 	}
 	static getPlugins(extname) {
 		var plugins = [];
-		if (extname == ".jpg" || extname == ".jpeg") {
-			plugins.push(_plugins["jpg"]);
-		} else if (extname == ".png") {
-			plugins.push(_plugins["png"]);
-		}
+		// if (extname == ".jpg" || extname == ".jpeg") {
+		// 	plugins.push(_plugins["jpg"]);
+		// } else if (extname == ".png") {
+		// 	plugins.push(_plugins["png"]);
+		// }
 		return plugins;
 	}
 	static uploadImage(imageData) {
