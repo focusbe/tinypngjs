@@ -4,3 +4,4 @@ output/
 package-lock.json
 *.md
 yarn*
+node_modules/
