@@ -1,9 +1,10 @@
 const https = require('https');
 const fs = require('fs');
 // 从缓存中获取
+const cacheFile = path.resolve(__dirname, 'cache.json');
 function getCache() {
     return new Promise((resolve, reject) => {
-        fs.readFile('cache.json', (err, data) => {
+        fs.readFile(cacheFile, (err, data) => {
             if (err) {
                 resolve(null);
                 return;
@@ -22,7 +23,7 @@ function getCache() {
 function updateCache(obj) {
     return new Promise((resolve, reject) => {
         fs.writeFile(
-            'cache.json',
+            cacheFile,
             JSON.stringify({ time: Date.now(), value: obj }),
             (err) => {
                 if (err) {
