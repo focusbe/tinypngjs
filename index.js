@@ -89,8 +89,8 @@ class TinyPng {
         if (!imageData || imageData.length > max) {
             return false;
         }
-        return new Promise((resolve, reject) => {
-            var req = https.request(Utli.getOptions(), (res) => {
+        return new Promise(async (resolve, reject) => {
+            var req = https.request(await Utli.getOptions(), (res) => {
                 res.on('data', (buf) => {
                     let obj;
                     try {
