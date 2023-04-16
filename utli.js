@@ -1,5 +1,6 @@
 const https = require('https');
 const fs = require('fs');
+const path = require('path');
 // 从缓存中获取
 const cacheFile = path.resolve(__dirname, 'cache.json');
 function getCache() {

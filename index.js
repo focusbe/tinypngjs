@@ -98,8 +98,7 @@ class TinyPng {
                     } catch (error) {
                         reject(new Error('解析返回值失败'));
                     }
-                    if (obj.error) {
-                        console.log(obj);
+                    if (obj && obj.error) {
                         reject(new Error(obj.error));
                     } else {
                         resolve(obj);
@@ -138,9 +137,7 @@ class TinyPng {
             imageData = image[0]['data'];
         } catch (error) {
             if (tinyExts.includes(extname)) {
-                console.log(error);
                 imageData = await fs.readFile(from);
-                console.log(imageData);
             } else {
                 throw error;
                 return false;
@@ -161,9 +158,7 @@ class TinyPng {
                         imageData = content;
                     }
                 }
-            } catch (error) {
-                console.log(error);
-            }
+            } catch (error) {}
         }
         var res = await this.saveImg(out, imageData);
         if (res) {
