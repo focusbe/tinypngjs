@@ -99,6 +99,7 @@ class TinyPng {
                         reject(new Error('解析返回值失败'));
                     }
                     if (obj.error) {
+                        console.log(obj);
                         reject(new Error(obj.error));
                     } else {
                         resolve(obj);
@@ -160,7 +161,9 @@ class TinyPng {
                         imageData = content;
                     }
                 }
-            } catch (error) {}
+            } catch (error) {
+                console.log(error);
+            }
         }
         var res = await this.saveImg(out, imageData);
         if (res) {

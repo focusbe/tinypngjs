@@ -1,10 +1,10 @@
 ---
-description: 图片压缩工具
+description: Tinify API client for Node.js
 ---
-
+Node.js client for the Tinify API, used for TinyPNG and TinyJPG. Tinify compresses your images intelligently. Read more at http://tinify.com.
 # tinypngjs
 
-## 安装
+## Install
 
 ```bash
 npm install tinypngjs
